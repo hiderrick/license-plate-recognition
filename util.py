@@ -66,3 +66,47 @@ def license_complies_format(text):
     else:
         return False
 
+# format the license plate text by converting characters using the mapping dictionaries
+def format_license(text):
+    license_plate_ = ''
+    mapping = {0: dict_int_to_char, 1: dict_int_to_char, 4: dict_int_to_char, 5: dict_int_to_char, 6: dict_int_to_char,
+               2: dict_char_to_int, 3: dict_char_to_int}
+    for j in [0, 1, 2, 3, 4, 5, 6]:
+        if text[j] in mapping[j].keys():
+            license_plate_ += mapping[j][text[j]]
+        else:
+            license_plate_ += text[j]
+
+    return license_plate_
+
+# read the license plate text from the given cropped image
+def read_license_plate(license_plate_crop):
+    detections = reader.readtext(license_plate_crop)
+
+    for detection in detections:
+        bbox, text, score = detection
+
+        text = text.upper().replace(' ', '')
+
+        if license_complies_format(text):
+            return format_license(text), score
+
+    return None, None
+
+# retrieve the vehicle coordinates and ID based on the license plate coordinates
+def get_car(license_plate, vehicle_track_ids):
+    x1, y1, x2, y2, score, class_id = license_plate
+
+    foundIt = False
+    for j in range(len(vehicle_track_ids)):
+        xcar1, ycar1, xcar2, ycar2, car_id = vehicle_track_ids[j]
+
+        if x1 > xcar1 and y1 > ycar1 and x2 < xcar2 and y2 < ycar2:
+            car_indx = j
+            foundIt = True
+            break
+
+    if foundIt:
+        return vehicle_track_ids[car_indx]
+
+    return -1, -1, -1, -1, -1
